@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: golmarc-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-password}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-golmarc}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - golmarc-network
+    command: ["--auth"]
+
+  redis:
+    image: redis:7-alpine
+    container_name: golmarc-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - golmarc-network
+    command: redis-server --requirepass ${REDIS_PASSWORD:-password}
+
+  mongo-express:
+    image: mongo-express
+    container_name: golmarc-mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER:-admin}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD:-password}
+      ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-password}@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER:-admin}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-password}
+    networks:
+      - golmarc-network
+    depends_on:
+      - mongodb
+
+networks:
+  golmarc-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
